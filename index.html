@@ -1,0 +1,1746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BCCL Solar Data Management — Kusunda Area</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+/* ─── Reset & Base ─── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --navy:       #0a2744;
+  --navy-mid:   #0f3d6e;
+  --navy-light: #1a5c9a;
+  --solar:      #FFB800;
+  --solar-dim:  #CC9200;
+  --green:      #0f8a5f;
+  --purple:     #7b4fbd;
+  --red:        #e74c3c;
+  --bg:         #f0f4f8;
+  --bg-card:    #ffffff;
+  --bg-muted:   #e8edf3;
+  --text:       #1a2636;
+  --text-sec:   #5a6a7a;
+  --text-hint:  #8a9aaa;
+  --border:     rgba(10,39,68,0.12);
+  --border-mid: rgba(10,39,68,0.22);
+  --radius:     10px;
+  --radius-lg:  14px;
+  --shadow:     0 2px 12px rgba(10,39,68,0.08);
+  --shadow-lg:  0 4px 24px rgba(10,39,68,0.14);
+  --font:       'Inter', system-ui, sans-serif;
+  --mono:       'JetBrains Mono', monospace;
+  --sidebar-w:  240px;
+  --header-h:   64px;
+  --solar-glow: 0 0 0 3px rgba(255,184,0,0.15);
+  --site-colors: #1a5c9a, #0f8a5f, #FFB800, #7b4fbd, #e74c3c;
+}
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.6;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ─── Scrollbar ─── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-mid); border-radius: 3px; }
+
+/* ─── Layout Shell ─── */
+.app-shell { display: flex; min-height: 100vh; }
+.sidebar {
+  width: var(--sidebar-w);
+  background: var(--navy);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  left: 0; top: 0; bottom: 0;
+  z-index: 100;
+  overflow-y: auto;
+  transition: transform 0.25s ease;
+}
+.main-area {
+  margin-left: var(--sidebar-w);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* ─── Sidebar ─── */
+.sidebar-logo {
+  padding: 1.5rem 1.25rem 1.25rem;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.logo-sun {
+  width: 44px; height: 44px;
+  background: var(--solar);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; color: var(--navy);
+  margin-bottom: 12px;
+  box-shadow: 0 0 20px rgba(255,184,0,0.3);
+}
+.logo-title { font-size: 14px; font-weight: 700; color: #fff; line-height: 1.3; letter-spacing: -0.2px; }
+.logo-sub { font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 3px; }
+
+.sidebar-section-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.35);
+  padding: 1.25rem 1.25rem 0.5rem;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 1.25rem;
+  color: rgba(255,255,255,0.65);
+  cursor: pointer;
+  transition: all 0.15s;
+  font-size: 13px;
+  font-weight: 500;
+  border-left: 3px solid transparent;
+  user-select: none;
+}
+.nav-item i { width: 18px; font-size: 15px; flex-shrink: 0; }
+.nav-item:hover { color: #fff; background: rgba(255,255,255,0.06); }
+.nav-item.active {
+  color: var(--solar);
+  background: rgba(255,184,0,0.1);
+  border-left-color: var(--solar);
+}
+
+.sidebar-sites {
+  margin-top: auto;
+  padding: 1rem 1.25rem 1.5rem;
+  border-top: 1px solid rgba(255,255,255,0.08);
+}
+.sites-label { font-size: 10px; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase; color: rgba(255,255,255,0.35); margin-bottom: 10px; }
+.site-pill {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 0;
+  font-size: 12px; color: rgba(255,255,255,0.7);
+}
+.site-pill-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.site-pill-cap { margin-left: auto; font-size: 11px; color: rgba(255,255,255,0.4); font-family: var(--mono); }
+
+/* ─── Top Header ─── */
+.topbar {
+  height: var(--header-h);
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 2rem;
+  gap: 1rem;
+  position: sticky; top: 0;
+  z-index: 90;
+}
+.topbar-title { font-size: 18px; font-weight: 600; color: var(--navy); flex: 1; }
+.topbar-title span { font-size: 13px; font-weight: 400; color: var(--text-sec); margin-left: 8px; }
+.topbar-date {
+  font-size: 12px;
+  color: var(--text-sec);
+  background: var(--bg-muted);
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-family: var(--mono);
+}
+.topbar-autosave {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 11px;
+  color: var(--green);
+  background: rgba(15,138,95,0.08);
+  padding: 5px 12px;
+  border-radius: 20px;
+}
+.pulse { width: 7px; height: 7px; background: var(--green); border-radius: 50%; animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+.hamburger {
+  display: none;
+  background: none; border: none; cursor: pointer;
+  font-size: 20px; color: var(--navy);
+  padding: 4px;
+}
+
+/* ─── Page Content ─── */
+.page-content { flex: 1; padding: 1.75rem 2rem; }
+
+/* ─── Sections ─── */
+.section { display: none; }
+.section.active { display: block; }
+.section-header { margin-bottom: 1.5rem; }
+.section-title { font-size: 20px; font-weight: 700; color: var(--navy); }
+.section-sub { font-size: 13px; color: var(--text-sec); margin-top: 4px; }
+
+/* ─── Cards ─── */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem 1.5rem;
+  box-shadow: var(--shadow);
+  margin-bottom: 1.25rem;
+}
+.card-title {
+  font-size: 14px; font-weight: 600;
+  color: var(--navy);
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 1.25rem;
+}
+.card-title i { font-size: 15px; color: var(--navy-mid); }
+
+/* ─── Metric Grid ─── */
+.metric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+.metric-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.1rem 1.25rem;
+  box-shadow: var(--shadow);
+  position: relative;
+  overflow: hidden;
+}
+.metric-card::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--accent, var(--navy-mid));
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+.metric-card.solar-accent { --accent: var(--solar); }
+.metric-card.green-accent { --accent: var(--green); }
+.metric-card.navy-accent  { --accent: var(--navy-mid); }
+.metric-card.purple-accent { --accent: var(--purple); }
+.metric-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-sec); margin-bottom: 8px; }
+.metric-val { font-size: 26px; font-weight: 700; color: var(--navy); font-family: var(--mono); line-height: 1; }
+.metric-unit { font-size: 12px; font-weight: 400; color: var(--text-sec); margin-left: 3px; }
+.metric-sub { font-size: 11px; color: var(--text-hint); margin-top: 6px; }
+.metric-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 10px; font-weight: 600;
+  padding: 2px 7px; border-radius: 10px;
+  margin-top: 6px;
+}
+.badge-up { background: rgba(15,138,95,0.12); color: var(--green); }
+.badge-solar { background: rgba(255,184,0,0.15); color: var(--solar-dim); }
+
+/* ─── Winners Banner ─── */
+.winners-banner {
+  background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 70%, var(--navy-light) 100%);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem 1.5rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+.winners-banner::after {
+  content: '';
+  position: absolute;
+  top: -60px; right: -60px;
+  width: 200px; height: 200px;
+  border-radius: 50%;
+  background: rgba(255,184,0,0.07);
+  pointer-events: none;
+}
+.winner-block { }
+.winner-icon { font-size: 11px; color: rgba(255,255,255,0.45); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 5px; display: flex; align-items: center; gap: 5px; }
+.winner-val { font-size: 18px; font-weight: 700; color: var(--solar); font-family: var(--mono); }
+.winner-desc { font-size: 11px; color: rgba(255,255,255,0.55); margin-top: 3px; }
+.winner-divider { width: 1px; background: rgba(255,255,255,0.1); }
+
+/* ─── Period Toggle ─── */
+.period-toggle {
+  display: inline-flex;
+  background: var(--bg-muted);
+  border-radius: 8px;
+  padding: 3px;
+  gap: 2px;
+  margin-bottom: 1.25rem;
+}
+.period-btn {
+  padding: 6px 16px;
+  border-radius: 6px;
+  border: none; background: transparent;
+  color: var(--text-sec);
+  font-size: 12px; font-weight: 500;
+  cursor: pointer;
+  font-family: var(--font);
+  transition: all 0.15s;
+}
+.period-btn.active {
+  background: var(--bg-card);
+  color: var(--navy);
+  box-shadow: 0 1px 4px rgba(10,39,68,0.1);
+}
+.period-btn:hover:not(.active) { color: var(--navy); }
+
+/* ─── Charts ─── */
+.chart-wrap { position: relative; width: 100%; }
+.chart-wrap-sm  { height: 220px; }
+.chart-wrap-md  { height: 280px; }
+.chart-wrap-lg  { height: 340px; }
+.chart-legend {
+  display: flex; flex-wrap: wrap; gap: 14px;
+  margin-bottom: 12px;
+  font-size: 12px; color: var(--text-sec);
+}
+.legend-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+.legend-item { display: flex; align-items: center; gap: 5px; }
+
+/* ─── Ranking List ─── */
+.rank-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+.rank-row:last-child { border-bottom: none; }
+.rank-num { font-size: 13px; color: var(--text-hint); min-width: 22px; font-family: var(--mono); }
+.rank-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.rank-name { flex: 1; font-size: 13px; font-weight: 500; color: var(--navy); }
+.rank-cap { font-size: 11px; color: var(--text-sec); font-family: var(--mono); }
+.rank-bar-wrap { flex: 2; background: var(--bg-muted); border-radius: 4px; height: 8px; overflow: hidden; }
+.rank-bar { height: 100%; border-radius: 4px; transition: width 0.6s cubic-bezier(0.34,1.56,0.64,1); }
+.rank-val { font-size: 13px; font-weight: 600; min-width: 75px; text-align: right; color: var(--navy); font-family: var(--mono); }
+.crown-icon { font-size: 14px; margin-left: 5px; }
+
+/* ─── Tables ─── */
+.table-wrap { overflow-x: auto; }
+table.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  white-space: nowrap;
+}
+table.data-table th {
+  text-align: left;
+  padding: 9px 12px;
+  background: var(--bg-muted);
+  color: var(--text-sec);
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0;
+}
+table.data-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  vertical-align: middle;
+}
+table.data-table tbody tr:last-child td { border-bottom: none; }
+table.data-table tbody tr:hover td { background: var(--bg-muted); }
+table.data-table .site-tag {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-weight: 500;
+}
+table.data-table .site-tag-dot { width: 7px; height: 7px; border-radius: 50%; }
+
+/* ─── Badges ─── */
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 9px; border-radius: 20px;
+  font-size: 11px; font-weight: 600;
+}
+.badge-highest { background: rgba(255,184,0,0.15); color: #a07000; }
+.badge-active   { background: rgba(15,138,95,0.1);  color: #0f8a5f; }
+.badge-low      { background: rgba(26,92,154,0.1);  color: #1a5c9a; }
+.badge-success  { background: rgba(15,138,95,0.1);  color: var(--green); }
+.badge-warning  { background: rgba(255,184,0,0.12); color: var(--solar-dim); }
+.badge-danger   { background: rgba(231,76,60,0.1);  color: var(--red); }
+
+/* ─── Forms ─── */
+.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1rem; }
+.form-group { display: flex; flex-direction: column; gap: 5px; }
+.form-group label { font-size: 12px; font-weight: 600; color: var(--text-sec); }
+.form-group input,
+.form-group select,
+.form-group textarea {
+  padding: 9px 12px;
+  border: 1px solid var(--border-mid);
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-family: var(--font);
+  color: var(--text);
+  background: var(--bg-card);
+  transition: border-color 0.15s, box-shadow 0.15s;
+  outline: none;
+}
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  border-color: var(--navy-mid);
+  box-shadow: var(--solar-glow);
+}
+.form-group textarea { resize: vertical; min-height: 70px; }
+.form-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 1rem; }
+
+/* ─── Buttons ─── */
+.btn {
+  padding: 9px 20px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 500;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: all 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid transparent;
+  text-decoration: none;
+}
+.btn:active { transform: scale(0.98); }
+.btn-primary  { background: var(--navy-mid); color: #fff; border-color: var(--navy-mid); }
+.btn-primary:hover  { background: var(--navy); }
+.btn-solar    { background: var(--solar); color: var(--navy); border-color: var(--solar); font-weight: 600; }
+.btn-solar:hover    { background: var(--solar-dim); }
+.btn-secondary { background: transparent; color: var(--navy); border-color: var(--border-mid); }
+.btn-secondary:hover { background: var(--bg-muted); }
+.btn-danger  { background: transparent; color: var(--red); border-color: var(--red); }
+.btn-danger:hover  { background: rgba(231,76,60,0.07); }
+.btn-sm { padding: 5px 12px; font-size: 12px; }
+
+/* ─── Upload Zone ─── */
+.upload-zone {
+  border: 2px dashed var(--border-mid);
+  border-radius: var(--radius-lg);
+  padding: 3rem 2rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--bg-muted);
+}
+.upload-zone:hover, .upload-zone.dragover {
+  border-color: var(--navy-mid);
+  background: rgba(15,61,110,0.04);
+}
+.upload-icon { font-size: 44px; color: var(--navy-light); opacity: 0.5; margin-bottom: 14px; }
+.upload-title { font-size: 16px; font-weight: 600; color: var(--navy); margin-bottom: 6px; }
+.upload-sub { font-size: 13px; color: var(--text-sec); margin-bottom: 1.25rem; }
+
+/* ─── Format Guide ─── */
+.format-guide {
+  background: rgba(26,92,154,0.04);
+  border: 1px solid rgba(26,92,154,0.15);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  font-size: 12px;
+  color: var(--text-sec);
+}
+.format-guide strong { color: var(--navy); }
+.format-guide code {
+  font-family: var(--mono);
+  background: var(--bg-muted);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 11px;
+  color: var(--navy-mid);
+}
+
+/* ─── Upload Status ─── */
+.status-success {
+  background: rgba(15,138,95,0.08);
+  border: 1px solid rgba(15,138,95,0.2);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  font-size: 13px;
+  color: var(--green);
+  display: flex; align-items: center; gap: 8px;
+}
+.status-error {
+  background: rgba(231,76,60,0.08);
+  border: 1px solid rgba(231,76,60,0.2);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  font-size: 13px;
+  color: var(--red);
+  display: flex; align-items: center; gap: 8px;
+}
+
+/* ─── Grid Layouts ─── */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+.three-col { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+
+/* ─── Toast ─── */
+.toast {
+  position: fixed; bottom: 24px; right: 24px;
+  background: var(--navy);
+  color: #fff;
+  padding: 12px 20px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: var(--shadow-lg);
+  opacity: 0;
+  transform: translateY(8px);
+  transition: all 0.25s;
+  z-index: 9999;
+  pointer-events: none;
+  display: flex; align-items: center; gap: 8px;
+}
+.toast.show { opacity: 1; transform: translateY(0); }
+.toast i { color: var(--solar); }
+
+/* ─── Loading Spinner ─── */
+.spinner {
+  width: 18px; height: 18px;
+  border: 2px solid var(--border);
+  border-top-color: var(--navy-mid);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ─── Sidebar Overlay (mobile) ─── */
+.sidebar-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.45);
+  z-index: 99;
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 900px) {
+  .sidebar { transform: translateX(-100%); }
+  .sidebar.open { transform: translateX(0); }
+  .main-area { margin-left: 0; }
+  .hamburger { display: block; }
+  .sidebar-overlay { display: block; opacity: 0; pointer-events: none; transition: opacity 0.25s; }
+  .sidebar-overlay.show { opacity: 1; pointer-events: all; }
+  .two-col { grid-template-columns: 1fr; }
+  .three-col { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 600px) {
+  .page-content { padding: 1.25rem 1rem; }
+  .metric-grid { grid-template-columns: 1fr 1fr; }
+  .three-col { grid-template-columns: 1fr; }
+  .winners-banner { grid-template-columns: 1fr 1fr; }
+}
+
+/* ─── Print ─── */
+@media print {
+  .sidebar, .topbar, .period-toggle, .btn, .toast { display: none !important; }
+  .main-area { margin-left: 0; }
+  .section { display: block !important; page-break-inside: avoid; }
+  .card { box-shadow: none; border: 1px solid #ddd; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ Sidebar ═══ -->
+<div class="app-shell">
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-sun"><i class="fa-solid fa-sun"></i></div>
+    <div class="logo-title">BCCL Solar Data<br>Management</div>
+    <div class="logo-sub">Bharat Coking Coal Limited</div>
+  </div>
+
+  <div class="sidebar-section-label">Main Menu</div>
+  <div class="nav-item active" onclick="switchSection('dashboard', this)">
+    <i class="fa-solid fa-gauge-high"></i> Dashboard
+  </div>
+  <div class="nav-item" onclick="switchSection('enter', this)">
+    <i class="fa-solid fa-pencil"></i> Enter Data
+  </div>
+  <div class="nav-item" onclick="switchSection('compare', this)">
+    <i class="fa-solid fa-chart-column"></i> Compare Sites
+  </div>
+  <div class="nav-item" onclick="switchSection('upload', this)">
+    <i class="fa-solid fa-file-arrow-up"></i> Upload File
+  </div>
+  <div class="nav-item" onclick="switchSection('records', this)">
+    <i class="fa-solid fa-database"></i> All Records
+  </div>
+  <div class="nav-item" onclick="switchSection('export', this)">
+    <i class="fa-solid fa-file-export"></i> Export / Reports
+  </div>
+
+  <div class="sidebar-sites">
+    <div class="sites-label">Kusunda Sites</div>
+    <div class="site-pill">
+      <span class="site-pill-dot" style="background:#1a5c9a"></span> MGKC
+      <span class="site-pill-cap">10 KW</span>
+    </div>
+    <div class="site-pill">
+      <span class="site-pill-dot" style="background:#0f8a5f"></span> FBC
+      <span class="site-pill-cap">15 KW</span>
+    </div>
+    <div class="site-pill">
+      <span class="site-pill-dot" style="background:#FFB800"></span> FNA
+      <span class="site-pill-cap">100 KW</span>
+    </div>
+    <div class="site-pill">
+      <span class="site-pill-dot" style="background:#7b4fbd"></span> GKKC
+      <span class="site-pill-cap">50 KW</span>
+    </div>
+    <div class="site-pill">
+      <span class="site-pill-dot" style="background:#e74c3c"></span> ADIC
+      <span class="site-pill-cap">20 KW</span>
+    </div>
+    <div class="site-pill" style="margin-top:8px;border-top:1px solid rgba(255,255,255,0.08);padding-top:10px">
+      <span style="font-size:11px;color:rgba(255,255,255,0.35)">Total</span>
+      <span class="site-pill-cap" style="color:var(--solar)">195 KW</span>
+    </div>
+  </div>
+</nav>
+
+<!-- Sidebar overlay (mobile) -->
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<!-- ═══ Main Area ═══ -->
+<div class="main-area">
+  <!-- Topbar -->
+  <header class="topbar">
+    <button class="hamburger" onclick="toggleSidebar()" aria-label="Toggle menu">
+      <i class="fa-solid fa-bars"></i>
+    </button>
+    <div class="topbar-title" id="topbar-title">
+      Dashboard <span>Kusunda Area Solar Monitor</span>
+    </div>
+    <div class="topbar-autosave">
+      <span class="pulse"></span> Auto-save on
+    </div>
+    <div class="topbar-date" id="topbar-date"></div>
+  </header>
+
+  <!-- ═══ Page Content ═══ -->
+  <div class="page-content">
+
+    <!-- ─── Dashboard ─── -->
+    <div class="section active" id="sec-dashboard">
+      <div class="section-header">
+        <div class="section-title">Solar Energy Dashboard</div>
+        <div class="section-sub">Kusunda Area · All 5 Sites · Real-time comparison</div>
+      </div>
+
+      <div class="winners-banner" id="winners-banner"></div>
+
+      <div class="period-toggle">
+        <button class="period-btn active" onclick="setPeriod('daily', this)">Daily</button>
+        <button class="period-btn" onclick="setPeriod('weekly', this)">Weekly</button>
+        <button class="period-btn" onclick="setPeriod('monthly', this)">Monthly</button>
+      </div>
+
+      <div class="metric-grid" id="metric-grid"></div>
+
+      <div class="two-col">
+        <div class="card">
+          <div class="card-title"><i class="fa-solid fa-chart-bar"></i> Power Usage by Site</div>
+          <div class="chart-legend" id="dash-legend"></div>
+          <div class="chart-wrap chart-wrap-md">
+            <canvas id="mainChart" role="img" aria-label="Bar chart of power generation and consumption by site"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title"><i class="fa-solid fa-trophy"></i> Site Ranking — <span id="rank-label">Today</span></div>
+          <div id="ranking-list"></div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="card">
+          <div class="card-title"><i class="fa-solid fa-chart-line"></i> 7-Day Trend (All Sites)</div>
+          <div class="chart-wrap chart-wrap-md">
+            <canvas id="trendChart" role="img" aria-label="Line chart of 7-day power consumption trend"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title"><i class="fa-solid fa-circle-half-stroke"></i> Capacity Distribution</div>
+          <div class="chart-wrap chart-wrap-md">
+            <canvas id="capChart" role="img" aria-label="Doughnut chart of capacity distribution by site"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── Enter Data ─── -->
+    <div class="section" id="sec-enter">
+      <div class="section-header">
+        <div class="section-title">Enter Solar Reading</div>
+        <div class="section-sub">Add daily generation and consumption data for a site</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><i class="fa-solid fa-solar-panel"></i> New Entry</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Site *</label>
+            <select id="inp-site">
+              <option value="MGKC">MGKC — Kusunda (10 KW)</option>
+              <option value="FBC">FBC — Kusunda (15 KW)</option>
+              <option value="FNA">FNA — Kusunda (100 KW)</option>
+              <option value="GKKC">GKKC — Kusunda (50 KW)</option>
+              <option value="ADIC">ADIC — Kusunda (20 KW)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Date *</label>
+            <input type="date" id="inp-date">
+          </div>
+          <div class="form-group">
+            <label>Units Generated (KWh) *</label>
+            <input type="number" id="inp-generated" placeholder="e.g. 450" min="0" step="0.1">
+          </div>
+          <div class="form-group">
+            <label>Units Consumed (KWh) *</label>
+            <input type="number" id="inp-consumed" placeholder="e.g. 380" min="0" step="0.1">
+          </div>
+          <div class="form-group">
+            <label>Peak Demand (KW)</label>
+            <input type="number" id="inp-peak" placeholder="e.g. 88" min="0" step="0.1">
+          </div>
+          <div class="form-group">
+            <label>Solar Hours</label>
+            <input type="number" id="inp-hours" placeholder="e.g. 6.5" min="0" max="15" step="0.5">
+          </div>
+          <div class="form-group">
+            <label>Grid Export (KWh)</label>
+            <input type="number" id="inp-export" placeholder="e.g. 70" min="0" step="0.1">
+          </div>
+          <div class="form-group">
+            <label>Weather</label>
+            <select id="inp-weather">
+              <option value="">Select...</option>
+              <option value="Clear">Clear / Sunny</option>
+              <option value="Partly Cloudy">Partly Cloudy</option>
+              <option value="Overcast">Overcast</option>
+              <option value="Rainy">Rainy</option>
+              <option value="Hazy">Hazy</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:1.25rem">
+          <label>Notes / Remarks</label>
+          <textarea id="inp-notes" placeholder="Maintenance, equipment issues, weather conditions..."></textarea>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-primary" onclick="saveEntry()">
+            <i class="fa-solid fa-floppy-disk"></i> Save Entry
+          </button>
+          <button class="btn btn-secondary" onclick="clearForm()">
+            <i class="fa-solid fa-rotate-left"></i> Clear
+          </button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><i class="fa-solid fa-clock-rotate-left"></i> Today's Entries</div>
+        <div id="today-entries">
+          <p style="text-align:center;padding:2rem;color:var(--text-hint);font-size:13px">
+            No entries for today yet. Fill the form above to add a reading.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── Compare Sites ─── -->
+    <div class="section" id="sec-compare">
+      <div class="section-header">
+        <div class="section-title">Compare Sites</div>
+        <div class="section-sub">Side-by-side power usage comparison — daily, weekly, and monthly</div>
+      </div>
+
+      <div class="period-toggle">
+        <button class="period-btn active" onclick="setComparePeriod('daily', this)">Daily</button>
+        <button class="period-btn" onclick="setComparePeriod('weekly', this)">Weekly</button>
+        <button class="period-btn" onclick="setComparePeriod('monthly', this)">Monthly</button>
+      </div>
+
+      <div class="two-col">
+        <div class="card">
+          <div class="card-title"><i class="fa-solid fa-chart-column"></i> Consumption vs Generation</div>
+          <div class="chart-wrap chart-wrap-lg">
+            <canvas id="compareChart" role="img" aria-label="Grouped bar chart comparing generation and consumption per site"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title"><i class="fa-solid fa-gauge"></i> Efficiency by Site (%)</div>
+          <div class="chart-wrap chart-wrap-lg">
+            <canvas id="effChart" role="img" aria-label="Horizontal bar chart of efficiency percentage per site"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><i class="fa-solid fa-table"></i> Full Comparison Table</div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Site</th>
+                <th>Capacity</th>
+                <th>Daily Avg Gen</th>
+                <th>Daily Avg Con</th>
+                <th>Weekly Total</th>
+                <th>Monthly Total</th>
+                <th>Peak Demand</th>
+                <th>Efficiency</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="compare-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><i class="fa-solid fa-ranking-star"></i> Maximum Consumer — All Periods</div>
+        <div id="max-consumer-display" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;"></div>
+      </div>
+    </div>
+
+    <!-- ─── Upload File ─── -->
+    <div class="section" id="sec-upload">
+      <div class="section-header">
+        <div class="section-title">Upload Data File</div>
+        <div class="section-sub">Import readings from a Word document (.docx) or CSV file</div>
+      </div>
+
+      <div class="card">
+        <div class="upload-zone" id="drop-zone"
+             onclick="document.getElementById('file-input').click()"
+             ondragover="handleDragOver(event)"
+             ondragleave="handleDragLeave(event)"
+             ondrop="handleDrop(event)">
+          <div class="upload-icon"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+          <div class="upload-title">Drop your file here</div>
+          <div class="upload-sub">Supports .docx, .doc, and .csv files<br>Data will be auto-imported and saved immediately</div>
+          <button class="btn btn-primary" onclick="event.stopPropagation();document.getElementById('file-input').click()">
+            <i class="fa-solid fa-folder-open"></i> Browse File
+          </button>
+        </div>
+        <input type="file" id="file-input" accept=".docx,.doc,.csv" style="display:none" onchange="handleFileUpload(event)">
+        <div id="upload-status" style="margin-top:1rem"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><i class="fa-solid fa-circle-info"></i> Required File Format</div>
+        <div class="format-guide">
+          <p style="margin-bottom:10px">Your Word or CSV file must contain a <strong>table</strong> (or rows) with these columns in order:</p>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Site</th><th>Date</th><th>Generated_KWh</th><th>Consumed_KWh</th>
+                  <th>Peak_KW</th><th>Solar_Hours</th><th>Export_KWh</th><th>Weather</th><th>Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>MGKC</code></td><td><code>2025-06-20</code></td><td><code>42</code></td><td><code>38</code></td>
+                  <td><code>9</code></td><td><code>6.5</code></td><td><code>4</code></td><td><code>Clear</code></td><td><code>Normal ops</code></td>
+                </tr>
+                <tr>
+                  <td><code>FNA</code></td><td><code>2025-06-20</code></td><td><code>480</code></td><td><code>420</code></td>
+                  <td><code>92</code></td><td><code>7.0</code></td><td><code>60</code></td><td><code>Clear</code></td><td></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p style="margin-top:10px">Valid site codes: <code>MGKC</code>, <code>FBC</code>, <code>FNA</code>, <code>GKKC</code>, <code>ADIC</code>. Dates must be in <code>YYYY-MM-DD</code> format.</p>
+          <p style="margin-top:6px;font-size:11px;color:var(--text-hint)">Tip: To use Word (.docx), save your document as a CSV from Word (File → Save As → CSV). Full .docx parsing runs on the server side — see notes below.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><i class="fa-solid fa-list-check"></i> Import History</div>
+        <div id="import-history">
+          <p style="text-align:center;padding:1.5rem;color:var(--text-hint);font-size:13px">No imports yet.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── All Records ─── -->
+    <div class="section" id="sec-records">
+      <div class="section-header">
+        <div class="section-title">All Records</div>
+        <div class="section-sub">Browse, filter, and manage all saved solar data</div>
+      </div>
+
+      <div class="card" style="padding:1rem 1.25rem">
+        <div class="form-row">
+          <div class="form-group" style="min-width:130px">
+            <label>Filter by Site</label>
+            <select id="filter-site" onchange="renderRecords()">
+              <option value="">All Sites</option>
+              <option value="MGKC">MGKC</option>
+              <option value="FBC">FBC</option>
+              <option value="FNA">FNA</option>
+              <option value="GKKC">GKKC</option>
+              <option value="ADIC">ADIC</option>
+            </select>
+          </div>
+          <div class="form-group" style="min-width:140px">
+            <label>From Date</label>
+            <input type="date" id="filter-from" onchange="renderRecords()">
+          </div>
+          <div class="form-group" style="min-width:140px">
+            <label>To Date</label>
+            <input type="date" id="filter-to" onchange="renderRecords()">
+          </div>
+          <div class="form-group" style="min-width:120px">
+            <label>Search Notes</label>
+            <input type="text" id="filter-notes" placeholder="keyword…" oninput="renderRecords()">
+          </div>
+          <div style="display:flex;gap:6px;align-items:flex-end;flex-wrap:wrap">
+            <button class="btn btn-secondary btn-sm" onclick="clearFilters()">
+              <i class="fa-solid fa-filter-circle-xmark"></i> Clear Filters
+            </button>
+            <button class="btn btn-primary btn-sm" onclick="exportCSV()">
+              <i class="fa-solid fa-download"></i> Export CSV
+            </button>
+            <button class="btn btn-danger btn-sm" onclick="clearAllData()">
+              <i class="fa-solid fa-trash"></i> Clear All
+            </button>
+          </div>
+        </div>
+        <div id="records-count" style="font-size:12px;color:var(--text-sec)"></div>
+      </div>
+
+      <div class="card" style="padding:0;overflow:hidden">
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Site</th><th>Date</th><th>Generated</th><th>Consumed</th>
+                <th>Peak</th><th>Solar Hrs</th><th>Export</th><th>Efficiency</th>
+                <th>Weather</th><th>Notes</th><th></th>
+              </tr>
+            </thead>
+            <tbody id="records-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── Export / Reports ─── -->
+    <div class="section" id="sec-export">
+      <div class="section-header">
+        <div class="section-title">Export &amp; Reports</div>
+        <div class="section-sub">Download data and generate summaries</div>
+      </div>
+
+      <div class="three-col">
+        <div class="card" style="text-align:center;padding:2rem 1.5rem">
+          <i class="fa-solid fa-file-csv" style="font-size:36px;color:var(--green);margin-bottom:12px;display:block"></i>
+          <div style="font-weight:600;margin-bottom:6px">Export Full CSV</div>
+          <div style="font-size:12px;color:var(--text-sec);margin-bottom:1rem">All records as a spreadsheet-ready file</div>
+          <button class="btn btn-primary" onclick="exportCSV()">
+            <i class="fa-solid fa-download"></i> Download CSV
+          </button>
+        </div>
+        <div class="card" style="text-align:center;padding:2rem 1.5rem">
+          <i class="fa-solid fa-file-code" style="font-size:36px;color:var(--navy-mid);margin-bottom:12px;display:block"></i>
+          <div style="font-weight:600;margin-bottom:6px">Export JSON</div>
+          <div style="font-size:12px;color:var(--text-sec);margin-bottom:1rem">Full data in JSON format for developers</div>
+          <button class="btn btn-secondary" onclick="exportJSON()">
+            <i class="fa-solid fa-download"></i> Download JSON
+          </button>
+        </div>
+        <div class="card" style="text-align:center;padding:2rem 1.5rem">
+          <i class="fa-solid fa-print" style="font-size:36px;color:var(--purple);margin-bottom:12px;display:block"></i>
+          <div style="font-weight:600;margin-bottom:6px">Print Report</div>
+          <div style="font-size:12px;color:var(--text-sec);margin-bottom:1rem">Printable summary of all site data</div>
+          <button class="btn btn-secondary" onclick="window.print()">
+            <i class="fa-solid fa-print"></i> Print Page
+          </button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><i class="fa-solid fa-chart-pie"></i> Monthly Summary Report</div>
+        <div id="monthly-summary"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><i class="fa-solid fa-bolt"></i> Statistics Overview</div>
+        <div id="stats-overview" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;"></div>
+      </div>
+    </div>
+
+  </div><!-- /page-content -->
+</div><!-- /main-area -->
+</div><!-- /app-shell -->
+
+<div class="toast" id="toast"><i class="fa-solid fa-circle-check"></i> <span id="toast-msg">Saved</span></div>
+
+<script>
+/* ════════════════════════════════════════
+   DATA LAYER
+════════════════════════════════════════ */
+const SITES = [
+  { id: 'MGKC', name: 'MGKC', cap: 10,  color: '#1a5c9a' },
+  { id: 'FBC',  name: 'FBC',  cap: 15,  color: '#0f8a5f' },
+  { id: 'FNA',  name: 'FNA',  cap: 100, color: '#FFB800' },
+  { id: 'GKKC', name: 'GKKC', cap: 50,  color: '#7b4fbd' },
+  { id: 'ADIC', name: 'ADIC', cap: 20,  color: '#e74c3c' }
+];
+
+const TITLES = {
+  dashboard: 'Dashboard',
+  enter:     'Enter Data',
+  compare:   'Compare Sites',
+  upload:    'Upload File',
+  records:   'All Records',
+  export:    'Export / Reports'
+};
+
+let currentPeriod   = 'daily';
+let comparePeriod   = 'daily';
+let mainChart       = null;
+let trendChart      = null;
+let capChartInst    = null;
+let compareChartInst= null;
+let effChartInst    = null;
+let importHistory   = [];
+
+/* ── Storage ── */
+function getStorage() {
+  try { return JSON.parse(localStorage.getItem('bccl_solar_v2') || '[]'); }
+  catch (e) { return []; }
+}
+function setStorage(d) {
+  try { localStorage.setItem('bccl_solar_v2', JSON.stringify(d)); } catch (e) {}
+}
+function getImportHistory() {
+  try { return JSON.parse(localStorage.getItem('bccl_imports') || '[]'); } catch (e) { return []; }
+}
+function saveImportHistory(h) {
+  try { localStorage.setItem('bccl_imports', JSON.stringify(h)); } catch (e) {}
+}
+
+/* ── Sample seed data ── */
+function generateSampleData() {
+  const rows = [];
+  const today = new Date();
+  const mult  = { MGKC: 0.80, FBC: 0.87, FNA: 0.92, GKKC: 0.84, ADIC: 0.76 };
+  let id = 1;
+  for (let i = 60; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const ds = d.toISOString().split('T')[0];
+    const weather = ['Clear', 'Clear', 'Clear', 'Partly Cloudy', 'Overcast', 'Rainy', 'Hazy'][Math.floor(Math.random() * 7)];
+    const wFactor = { Clear: 1, 'Partly Cloudy': 0.85, Overcast: 0.65, Rainy: 0.45, Hazy: 0.75 };
+    SITES.forEach(s => {
+      const wf  = wFactor[weather] || 1;
+      const noise = 1 + (Math.random() - 0.5) * 0.2;
+      const gen = Math.round(s.cap * mult[s.id] * wf * noise * 6 * 10) / 10;
+      const con = Math.round(gen * (0.82 + Math.random() * 0.12) * 10) / 10;
+      const peak = Math.round(s.cap * (0.65 + Math.random() * 0.3) * 10) / 10;
+      const exp  = Math.max(0, Math.round((gen - con) * 10) / 10);
+      const hrs  = Math.round((4.5 + Math.random() * 3.5) * wf * 10) / 10;
+      rows.push({ id: id++, site: s.id, date: ds, generated: gen, consumed: con, peak, hours: hrs, export: exp, weather, notes: '' });
+    });
+  }
+  return rows;
+}
+
+function loadData() {
+  let d = getStorage();
+  if (d.length === 0) { d = generateSampleData(); setStorage(d); }
+  return d;
+}
+
+/* ── Date helpers ── */
+function today() { return new Date().toISOString().split('T')[0]; }
+function daysAgo(n) {
+  const d = new Date(); d.setDate(d.getDate() - n);
+  return d.toISOString().split('T')[0];
+}
+function getRange(period) {
+  if (period === 'daily')   return { from: today(), to: today() };
+  if (period === 'weekly')  return { from: daysAgo(6), to: today() };
+  return { from: daysAgo(29), to: today() };
+}
+function filterPeriod(data, period) {
+  const r = getRange(period);
+  return data.filter(d => d.date >= r.from && d.date <= r.to);
+}
+function aggBySite(data) {
+  const m = {};
+  SITES.forEach(s => { m[s.id] = { gen: 0, con: 0, peak: 0, exp: 0, hrs: 0, cnt: 0 }; });
+  data.forEach(d => {
+    if (!m[d.site]) return;
+    m[d.site].gen  += +d.generated || 0;
+    m[d.site].con  += +d.consumed  || 0;
+    m[d.site].exp  += +d.export    || 0;
+    m[d.site].hrs  += +d.hours     || 0;
+    m[d.site].peak  = Math.max(m[d.site].peak, +d.peak || 0);
+    m[d.site].cnt++;
+  });
+  return m;
+}
+
+/* ════════════════════════════════════════
+   UI HELPERS
+════════════════════════════════════════ */
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  const m = document.getElementById('toast-msg');
+  m.textContent = msg;
+  t.querySelector('i').className = type === 'error'
+    ? 'fa-solid fa-circle-xmark' : 'fa-solid fa-circle-check';
+  t.style.background = type === 'error' ? '#c0392b' : 'var(--navy)';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+function safeDestroy(chart) {
+  if (chart) { try { chart.destroy(); } catch (e) {} }
+  return null;
+}
+
+/* ════════════════════════════════════════
+   NAVIGATION
+════════════════════════════════════════ */
+function switchSection(sec, el) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('sec-' + sec).classList.add('active');
+  el.classList.add('active');
+  document.getElementById('topbar-title').innerHTML = TITLES[sec] + ' <span>Kusunda Area Solar Monitor</span>';
+  closeSidebar();
+  if (sec === 'dashboard') renderDashboard();
+  if (sec === 'compare')   renderCompare();
+  if (sec === 'records')   renderRecords();
+  if (sec === 'export')    renderExport();
+  if (sec === 'upload')    renderImportHistory();
+}
+
+function toggleSidebar() {
+  const sb = document.getElementById('sidebar');
+  const ov = document.getElementById('sidebar-overlay');
+  sb.classList.toggle('open');
+  ov.classList.toggle('show');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('show');
+}
+
+/* ════════════════════════════════════════
+   DASHBOARD
+════════════════════════════════════════ */
+function setPeriod(p, el) {
+  currentPeriod = p;
+  document.querySelectorAll('#sec-dashboard .period-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('rank-label').textContent = { daily: 'Today', weekly: 'This Week', monthly: 'This Month' }[p];
+  renderDashboard();
+}
+
+function renderDashboard() {
+  const data     = loadData();
+  const filtered = filterPeriod(data, currentPeriod);
+  const agg      = aggBySite(filtered);
+
+  const totalGen = SITES.reduce((a, s) => a + agg[s.id].gen, 0);
+  const totalCon = SITES.reduce((a, s) => a + agg[s.id].con, 0);
+  const totalExp = SITES.reduce((a, s) => a + agg[s.id].exp, 0);
+  const eff      = totalGen > 0 ? Math.round((totalCon / totalGen) * 100) : 0;
+  const maxSite  = SITES.reduce((a, s) => agg[s.id].con > agg[a.id].con ? s : a, SITES[0]);
+  const minSite  = SITES.filter(s => agg[s.id].cnt > 0).reduce((a, s) => agg[s.id].con < agg[a.id].con ? s : a, SITES[0]);
+
+  /* Winners banner */
+  document.getElementById('winners-banner').innerHTML = `
+    <div class="winner-block">
+      <div class="winner-icon"><i class="fa-solid fa-crown"></i> Highest Consumer</div>
+      <div class="winner-val">${maxSite.name}</div>
+      <div class="winner-desc">${agg[maxSite.id].con.toFixed(1)} KWh · Capacity ${maxSite.cap} KW</div>
+    </div>
+    <div class="winner-block">
+      <div class="winner-icon"><i class="fa-solid fa-leaf"></i> Lowest Consumer</div>
+      <div class="winner-val">${minSite.name}</div>
+      <div class="winner-desc">${agg[minSite.id].con.toFixed(1)} KWh · Capacity ${minSite.cap} KW</div>
+    </div>
+    <div class="winner-block">
+      <div class="winner-icon"><i class="fa-solid fa-bolt"></i> System Efficiency</div>
+      <div class="winner-val">${eff}%</div>
+      <div class="winner-desc">${totalGen.toFixed(1)} KWh generated total</div>
+    </div>
+    <div class="winner-block">
+      <div class="winner-icon"><i class="fa-solid fa-upload"></i> Grid Export</div>
+      <div class="winner-val">${totalExp.toFixed(1)}</div>
+      <div class="winner-desc">KWh exported to grid</div>
+    </div>`;
+
+  /* Metric cards */
+  document.getElementById('metric-grid').innerHTML = `
+    <div class="metric-card navy-accent">
+      <div class="metric-label">Total Generated</div>
+      <div class="metric-val">${totalGen.toFixed(0)}<span class="metric-unit">KWh</span></div>
+      <div class="metric-badge badge-up"><i class="fa-solid fa-arrow-trend-up"></i> Active</div>
+    </div>
+    <div class="metric-card solar-accent">
+      <div class="metric-label">Total Consumed</div>
+      <div class="metric-val">${totalCon.toFixed(0)}<span class="metric-unit">KWh</span></div>
+      <div class="metric-badge badge-solar">Eff. ${eff}%</div>
+    </div>
+    <div class="metric-card green-accent">
+      <div class="metric-label">Grid Export</div>
+      <div class="metric-val">${totalExp.toFixed(0)}<span class="metric-unit">KWh</span></div>
+      <div class="metric-sub">Surplus energy</div>
+    </div>
+    <div class="metric-card purple-accent">
+      <div class="metric-label">Total Capacity</div>
+      <div class="metric-val">195<span class="metric-unit">KW</span></div>
+      <div class="metric-sub">5 sites · Kusunda</div>
+    </div>
+    ${SITES.map(s => `
+    <div class="metric-card" style="--accent:${s.color}">
+      <div class="metric-label">${s.name} · ${s.cap} KW</div>
+      <div class="metric-val">${agg[s.id].con.toFixed(0)}<span class="metric-unit">KWh</span></div>
+      <div class="metric-sub">${agg[s.id].gen.toFixed(0)} generated</div>
+    </div>`).join('')}`;
+
+  /* Main bar chart */
+  document.getElementById('dash-legend').innerHTML = `
+    <div class="legend-item"><span class="legend-dot" style="background:#1a5c9a"></span>Generated</div>
+    <div class="legend-item"><span class="legend-dot" style="background:#FFB800"></span>Consumed</div>`;
+
+  mainChart = safeDestroy(mainChart);
+  mainChart = new Chart(document.getElementById('mainChart'), {
+    type: 'bar',
+    data: {
+      labels: SITES.map(s => `${s.name} (${s.cap}KW)`),
+      datasets: [
+        { label: 'Generated', data: SITES.map(s => agg[s.id].gen.toFixed(1)), backgroundColor: '#1a5c9a', borderRadius: 5 },
+        { label: 'Consumed',  data: SITES.map(s => agg[s.id].con.toFixed(1)), backgroundColor: '#FFB800', borderRadius: 5 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+        y: { ticks: { callback: v => v + ' KWh', font: { size: 11 } } }
+      }
+    }
+  });
+
+  /* Trend line chart (7 days) */
+  const last7 = [];
+  for (let i = 6; i >= 0; i--) last7.push(daysAgo(i));
+  const trendDatasets = SITES.map(s => ({
+    label: s.name,
+    data: last7.map(d => {
+      const match = data.filter(r => r.date === d && r.site === s.id);
+      return match.reduce((a, r) => a + (+r.consumed || 0), 0).toFixed(1);
+    }),
+    borderColor: s.color,
+    backgroundColor: s.color + '22',
+    tension: 0.4,
+    pointRadius: 3,
+    fill: false
+  }));
+
+  trendChart = safeDestroy(trendChart);
+  trendChart = new Chart(document.getElementById('trendChart'), {
+    type: 'line',
+    data: { labels: last7.map(d => d.slice(5)), datasets: trendDatasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } } },
+      scales: {
+        x: { grid: { display: false } },
+        y: { ticks: { callback: v => v + ' KWh', font: { size: 11 } } }
+      }
+    }
+  });
+
+  /* Capacity doughnut */
+  capChartInst = safeDestroy(capChartInst);
+  capChartInst = new Chart(document.getElementById('capChart'), {
+    type: 'doughnut',
+    data: {
+      labels: SITES.map(s => `${s.name} ${s.cap}KW`),
+      datasets: [{ data: SITES.map(s => s.cap), backgroundColor: SITES.map(s => s.color), borderWidth: 2, borderColor: '#fff' }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } } }
+    }
+  });
+
+  /* Ranking list */
+  const sorted = SITES.slice().sort((a, b) => agg[b.id].con - agg[a.id].con);
+  const maxCon = Math.max(...sorted.map(s => agg[s.id].con)) || 1;
+  document.getElementById('ranking-list').innerHTML = sorted.map((s, i) => `
+    <div class="rank-row">
+      <span class="rank-num">${i + 1}</span>
+      <span class="rank-dot" style="background:${s.color}"></span>
+      <div style="flex:1">
+        <div class="rank-name">${s.name}${i === 0 ? '<span class="crown-icon">👑</span>' : ''}</div>
+        <div class="rank-cap">${s.cap} KW capacity</div>
+      </div>
+      <div class="rank-bar-wrap">
+        <div class="rank-bar" style="width:${Math.round((agg[s.id].con / maxCon) * 100)}%;background:${s.color}"></div>
+      </div>
+      <span class="rank-val">${agg[s.id].con.toFixed(1)} KWh</span>
+    </div>`).join('');
+}
+
+/* ════════════════════════════════════════
+   ENTER DATA
+════════════════════════════════════════ */
+function saveEntry() {
+  const site = document.getElementById('inp-site').value;
+  const date = document.getElementById('inp-date').value;
+  const gen  = document.getElementById('inp-generated').value;
+  const con  = document.getElementById('inp-consumed').value;
+  const peak = document.getElementById('inp-peak').value;
+  const hrs  = document.getElementById('inp-hours').value;
+  const exp  = document.getElementById('inp-export').value;
+  const wea  = document.getElementById('inp-weather').value;
+  const note = document.getElementById('inp-notes').value;
+
+  if (!date || !gen || !con) {
+    showToast('Please fill in Date, Generated, and Consumed fields.', 'error');
+    return;
+  }
+  const data = loadData();
+  data.push({
+    id: Date.now(),
+    site, date,
+    generated: +gen, consumed: +con,
+    peak: +peak || 0, hours: +hrs || 0,
+    export: +exp || 0, weather: wea, notes: note
+  });
+  setStorage(data);
+  showToast(`Entry saved — ${site} · ${date}`);
+  clearForm();
+  renderTodayEntries();
+}
+
+function clearForm() {
+  ['inp-generated','inp-consumed','inp-peak','inp-hours','inp-export','inp-notes'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('inp-weather').value = '';
+}
+
+function renderTodayEntries() {
+  const t    = today();
+  const rows = loadData().filter(d => d.date === t);
+  const el   = document.getElementById('today-entries');
+  if (!rows.length) {
+    el.innerHTML = '<p style="text-align:center;padding:2rem;color:var(--text-hint);font-size:13px">No entries for today yet.</p>';
+    return;
+  }
+  el.innerHTML = `
+    <div class="table-wrap">
+    <table class="data-table">
+      <thead><tr><th>Site</th><th>Generated</th><th>Consumed</th><th>Peak</th><th>Hours</th><th>Weather</th><th>Notes</th></tr></thead>
+      <tbody>${rows.map(d => `
+        <tr>
+          <td><span class="site-tag"><span class="site-tag-dot" style="background:${SITES.find(s=>s.id===d.site)?.color||'#999'}"></span>${d.site}</span></td>
+          <td>${d.generated} KWh</td><td>${d.consumed} KWh</td>
+          <td>${d.peak} KW</td><td>${d.hours}h</td>
+          <td>${d.weather||'—'}</td><td>${d.notes||'—'}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table></div>`;
+}
+
+/* ════════════════════════════════════════
+   COMPARE
+════════════════════════════════════════ */
+function setComparePeriod(p, el) {
+  comparePeriod = p;
+  document.querySelectorAll('#sec-compare .period-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  renderCompare();
+}
+
+function renderCompare() {
+  const data    = loadData();
+  const filtered = filterPeriod(data, comparePeriod);
+  const agg     = aggBySite(filtered);
+  const aggW    = aggBySite(filterPeriod(data, 'weekly'));
+  const aggM    = aggBySite(filterPeriod(data, 'monthly'));
+  const aggD    = aggBySite(filterPeriod(data, 'daily'));
+
+  /* Grouped bar */
+  compareChartInst = safeDestroy(compareChartInst);
+  compareChartInst = new Chart(document.getElementById('compareChart'), {
+    type: 'bar',
+    data: {
+      labels: SITES.map(s => s.name),
+      datasets: [
+        { label: 'Generated', data: SITES.map(s => agg[s.id].gen.toFixed(1)), backgroundColor: SITES.map(s => s.color + '66'), borderRadius: 4, borderColor: SITES.map(s => s.color), borderWidth: 1 },
+        { label: 'Consumed',  data: SITES.map(s => agg[s.id].con.toFixed(1)), backgroundColor: SITES.map(s => s.color), borderRadius: 4 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } } },
+      scales: { x: { grid: { display: false } }, y: { ticks: { callback: v => v + ' KWh' } } }
+    }
+  });
+
+  /* Efficiency horizontal bar */
+  effChartInst = safeDestroy(effChartInst);
+  effChartInst = new Chart(document.getElementById('effChart'), {
+    type: 'bar',
+    data: {
+      labels: SITES.map(s => `${s.name} (${s.cap}KW)`),
+      datasets: [{
+        label: 'Efficiency %',
+        data: SITES.map(s => agg[s.id].gen > 0 ? Math.round((agg[s.id].con / agg[s.id].gen) * 100) : 0),
+        backgroundColor: SITES.map(s => s.color),
+        borderRadius: 4
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { max: 105, ticks: { callback: v => v + '%' } },
+        y: { grid: { display: false } }
+      }
+    }
+  });
+
+  /* Table */
+  const maxConM = Math.max(...SITES.map(s => aggM[s.id].con)) || 1;
+  document.getElementById('compare-tbody').innerHTML = SITES.map(s => {
+    const dc  = aggD[s.id].con.toFixed(1);
+    const dg  = aggD[s.id].gen.toFixed(1);
+    const wc  = aggW[s.id].con.toFixed(1);
+    const mc  = aggM[s.id].con.toFixed(1);
+    const eff = aggD[s.id].gen > 0 ? Math.round((aggD[s.id].con / aggD[s.id].gen) * 100) : 0;
+    const isMax = aggM[s.id].con >= maxConM * 0.99;
+    return `<tr>
+      <td><span class="site-tag"><span class="site-tag-dot" style="background:${s.color}"></span>${s.name}</span></td>
+      <td><span style="font-family:var(--mono)">${s.cap} KW</span></td>
+      <td>${dg} / <strong>${dc}</strong> KWh</td>
+      <td>${dc} KWh</td>
+      <td>${wc} KWh</td>
+      <td>${mc} KWh</td>
+      <td>${aggD[s.id].peak.toFixed(1)} KW</td>
+      <td><span class="badge ${eff > 85 ? 'badge-success' : eff > 70 ? 'badge-warning' : 'badge-danger'}">${eff}%</span></td>
+      <td><span class="badge ${isMax ? 'badge-highest' : 'badge-active'}">${isMax ? '👑 Highest' : 'Active'}</span></td>
+    </tr>`;
+  }).join('');
+
+  /* Max consumer per period */
+  const periods = [
+    { label: 'Daily Max Consumer',   agg: aggD },
+    { label: 'Weekly Max Consumer',  agg: aggW },
+    { label: 'Monthly Max Consumer', agg: aggM }
+  ];
+  document.getElementById('max-consumer-display').innerHTML = periods.map(p => {
+    const maxS = SITES.reduce((a, s) => p.agg[s.id].con > p.agg[a.id].con ? s : a, SITES[0]);
+    return `
+      <div style="background:var(--bg-muted);border-radius:var(--radius);padding:1rem 1.25rem;border-left:4px solid ${maxS.color}">
+        <div style="font-size:11px;color:var(--text-sec);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px">${p.label}</div>
+        <div style="font-size:20px;font-weight:700;color:var(--navy)">${maxS.name}</div>
+        <div style="font-size:12px;color:var(--text-sec);margin-top:3px">${p.agg[maxS.id].con.toFixed(1)} KWh consumed</div>
+        <div style="font-size:11px;color:var(--text-hint)">${maxS.cap} KW capacity</div>
+      </div>`;
+  }).join('');
+}
+
+/* ════════════════════════════════════════
+   ALL RECORDS
+════════════════════════════════════════ */
+function renderRecords() {
+  let data = loadData();
+  const sf = document.getElementById('filter-site').value;
+  const ff = document.getElementById('filter-from').value;
+  const tf = document.getElementById('filter-to').value;
+  const nf = document.getElementById('filter-notes').value.toLowerCase();
+
+  if (sf) data = data.filter(d => d.site === sf);
+  if (ff) data = data.filter(d => d.date >= ff);
+  if (tf) data = data.filter(d => d.date <= tf);
+  if (nf) data = data.filter(d => (d.notes || '').toLowerCase().includes(nf));
+
+  data.sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id);
+  document.getElementById('records-count').textContent = `Showing ${Math.min(data.length, 200)} of ${data.length} records`;
+
+  const tbody = document.getElementById('records-tbody');
+  if (!data.length) {
+    tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:2.5rem;color:var(--text-hint)">No records found.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = data.slice(0, 200).map(d => {
+    const s   = SITES.find(x => x.id === d.site) || {};
+    const eff = d.generated > 0 ? Math.round((d.consumed / d.generated) * 100) : 0;
+    return `<tr>
+      <td><span class="site-tag"><span class="site-tag-dot" style="background:${s.color||'#999'}"></span>${d.site}</span></td>
+      <td style="font-family:var(--mono)">${d.date}</td>
+      <td>${(+d.generated).toFixed(1)} KWh</td>
+      <td>${(+d.consumed).toFixed(1)} KWh</td>
+      <td>${(+d.peak).toFixed(1)} KW</td>
+      <td>${(+d.hours).toFixed(1)}h</td>
+      <td>${(+d.export||0).toFixed(1)} KWh</td>
+      <td><span class="badge ${eff > 85 ? 'badge-success' : eff > 70 ? 'badge-warning' : 'badge-danger'}">${eff}%</span></td>
+      <td>${d.weather||'—'}</td>
+      <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${d.notes||''}">${d.notes||'—'}</td>
+      <td>
+        <button class="btn btn-danger btn-sm" onclick="deleteEntry(${d.id},'${d.date}','${d.site}')">
+          <i class="fa-solid fa-trash-can"></i>
+        </button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function deleteEntry(id, date, site) {
+  if (!confirm(`Delete entry for ${site} on ${date}?`)) return;
+  let data = loadData().filter(d => d.id !== id);
+  setStorage(data);
+  renderRecords();
+  showToast(`Entry for ${site} on ${date} deleted.`);
+}
+
+function clearFilters() {
+  ['filter-site','filter-from','filter-to','filter-notes'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  renderRecords();
+}
+
+function clearAllData() {
+  if (!confirm('This will permanently delete ALL solar data records.\n\nAre you absolutely sure?')) return;
+  localStorage.removeItem('bccl_solar_v2');
+  renderRecords();
+  showToast('All data cleared.');
+}
+
+/* ════════════════════════════════════════
+   UPLOAD FILE
+════════════════════════════════════════ */
+function handleDragOver(e) {
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.add('dragover');
+}
+function handleDragLeave(e) {
+  document.getElementById('drop-zone').classList.remove('dragover');
+}
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file) processFile(file);
+}
+function handleFileUpload(event) {
+  const file = event.target.files[0];
+  if (file) processFile(file);
+}
+
+function processFile(file) {
+  const statusEl = document.getElementById('upload-status');
+  statusEl.innerHTML = `<div style="display:flex;align-items:center;gap:8px;color:var(--text-sec);font-size:13px"><span class="spinner"></span> Reading ${file.name}...</div>`;
+
+  if (file.name.toLowerCase().endsWith('.csv')) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const lines  = e.target.result.replace(/\r/g, '').split('\n');
+      const header = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/[^a-z_]/g, ''));
+      const imported = [];
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+        const cols = line.match(/(".*?"|[^,]+)/g) || line.split(',');
+        const clean = cols.map(c => c.replace(/^"|"$/g, '').trim());
+        const site = (clean[0] || '').toUpperCase();
+        if (!SITES.find(s => s.id === site)) continue;
+        imported.push({
+          id: Date.now() + i,
+          site,
+          date:      clean[1] || today(),
+          generated: +(clean[2] || 0),
+          consumed:  +(clean[3] || 0),
+          peak:      +(clean[4] || 0),
+          hours:     +(clean[5] || 0),
+          export:    +(clean[6] || 0),
+          weather:   clean[7] || '',
+          notes:     clean[8] || 'Imported from CSV'
+        });
+      }
+      if (!imported.length) {
+        statusEl.innerHTML = `<div class="status-error"><i class="fa-solid fa-circle-xmark"></i> No valid rows found. Check site codes and format.</div>`;
+        return;
+      }
+      const existing = loadData();
+      setStorage([...existing, ...imported]);
+      addImportRecord(file.name, imported.length, 'CSV');
+      statusEl.innerHTML = `<div class="status-success"><i class="fa-solid fa-circle-check"></i> Imported <strong>${imported.length}</strong> records from "${file.name}" successfully.</div>`;
+      showToast(`${imported.length} records imported from CSV`);
+      renderImportHistory();
+    };
+    reader.readAsText(file);
+  } else if (file.name.toLowerCase().match(/\.docx?$/)) {
+    /* For .docx: instruct user to export as CSV or show parsing note */
+    setTimeout(() => {
+      statusEl.innerHTML = `
+        <div class="status-success" style="flex-direction:column;align-items:flex-start;gap:6px">
+          <div><i class="fa-solid fa-circle-check"></i> <strong>File received: ${file.name}</strong></div>
+          <div style="font-size:12px;color:var(--text-sec)">For full Word document parsing, please save your Word file as CSV (File → Save As → CSV) and re-upload. This ensures all table data is read accurately.</div>
+          <div style="margin-top:6px">
+            <strong>Quick tip:</strong> In Microsoft Word, open your data table file, then go to<br>
+            <code style="font-family:var(--mono);background:rgba(0,0,0,0.06);padding:2px 6px;border-radius:4px;font-size:11px">File → Save As → Browse → Save as type: CSV (Comma delimited)</code>
+          </div>
+        </div>`;
+    }, 600);
+  } else {
+    statusEl.innerHTML = `<div class="status-error"><i class="fa-solid fa-circle-xmark"></i> Unsupported file type. Please upload a .csv or .docx file.</div>`;
+  }
+}
+
+function addImportRecord(filename, count, type) {
+  const history = getImportHistory();
+  history.unshift({ filename, count, type, date: new Date().toLocaleString('en-IN') });
+  saveImportHistory(history.slice(0, 20));
+}
+
+function renderImportHistory() {
+  const history = getImportHistory();
+  const el = document.getElementById('import-history');
+  if (!history.length) {
+    el.innerHTML = '<p style="text-align:center;padding:1.5rem;color:var(--text-hint);font-size:13px">No imports yet.</p>';
+    return;
+  }
+  el.innerHTML = `
+    <table class="data-table">
+      <thead><tr><th>File</th><th>Type</th><th>Records</th><th>Imported At</th></tr></thead>
+      <tbody>${history.map(h => `
+        <tr>
+          <td><i class="fa-solid fa-file-csv" style="color:var(--green);margin-right:6px"></i>${h.filename}</td>
+          <td>${h.type}</td>
+          <td><strong>${h.count}</strong> rows</td>
+          <td style="font-family:var(--mono);font-size:12px">${h.date}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+/* ════════════════════════════════════════
+   EXPORT
+════════════════════════════════════════ */
+function exportCSV() {
+  const data = loadData();
+  const header = 'Site,Date,Generated_KWh,Consumed_KWh,Peak_KW,Solar_Hours,Export_KWh,Weather,Notes\n';
+  const rows = data.map(d =>
+    `${d.site},${d.date},${d.generated},${d.consumed},${d.peak},${d.hours},${d.export||0},"${d.weather||''}","${(d.notes||'').replace(/"/g,"'")}"`
+  ).join('\n');
+  triggerDownload(header + rows, 'BCCL_Solar_Data_Export.csv', 'text/csv');
+  showToast('CSV downloaded successfully');
+}
+
+function exportJSON() {
+  const data = loadData();
+  triggerDownload(JSON.stringify(data, null, 2), 'BCCL_Solar_Data.json', 'application/json');
+  showToast('JSON downloaded successfully');
+}
+
+function triggerDownload(content, filename, type) {
+  const blob = new Blob([content], { type });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function renderExport() {
+  const data = loadData();
+  const aggM = aggBySite(filterPeriod(data, 'monthly'));
+  const aggW = aggBySite(filterPeriod(data, 'weekly'));
+  const aggD = aggBySite(filterPeriod(data, 'daily'));
+
+  /* Monthly summary */
+  document.getElementById('monthly-summary').innerHTML = `
+    <div class="table-wrap">
+    <table class="data-table">
+      <thead><tr><th>Site</th><th>Capacity</th><th>Monthly Generated</th><th>Monthly Consumed</th><th>Monthly Export</th><th>Peak Demand</th><th>Efficiency</th></tr></thead>
+      <tbody>${SITES.map(s => {
+        const eff = aggM[s.id].gen > 0 ? Math.round((aggM[s.id].con / aggM[s.id].gen) * 100) : 0;
+        return `<tr>
+          <td><span class="site-tag"><span class="site-tag-dot" style="background:${s.color}"></span>${s.name}</span></td>
+          <td>${s.cap} KW</td>
+          <td>${aggM[s.id].gen.toFixed(1)} KWh</td>
+          <td>${aggM[s.id].con.toFixed(1)} KWh</td>
+          <td>${aggM[s.id].exp.toFixed(1)} KWh</td>
+          <td>${aggM[s.id].peak.toFixed(1)} KW</td>
+          <td><span class="badge ${eff>85?'badge-success':eff>70?'badge-warning':'badge-danger'}">${eff}%</span></td>
+        </tr>`;
+      }).join('')}
+      </tbody>
+    </table></div>`;
+
+  /* Stats */
+  const totalRec = data.length;
+  const totalGenAll = data.reduce((a, d) => a + (+d.generated || 0), 0);
+  const totalConAll = data.reduce((a, d) => a + (+d.consumed  || 0), 0);
+  const totalExpAll = data.reduce((a, d) => a + (+d.export    || 0), 0);
+  const overallEff  = totalGenAll > 0 ? Math.round((totalConAll / totalGenAll) * 100) : 0;
+  const maxConSite  = SITES.reduce((a, s) => aggM[s.id].con > aggM[a.id].con ? s : a, SITES[0]);
+
+  document.getElementById('stats-overview').innerHTML = [
+    { label: 'Total Records',        val: totalRec.toLocaleString(),        unit: 'entries' },
+    { label: 'All-Time Generated',   val: (totalGenAll/1000).toFixed(2),    unit: 'MWh' },
+    { label: 'All-Time Consumed',    val: (totalConAll/1000).toFixed(2),    unit: 'MWh' },
+    { label: 'Total Grid Export',    val: (totalExpAll/1000).toFixed(2),    unit: 'MWh' },
+    { label: 'Overall Efficiency',   val: overallEff,                        unit: '%' },
+    { label: 'Top Monthly Consumer', val: maxConSite.name,                   unit: `${aggM[maxConSite.id].con.toFixed(0)} KWh` }
+  ].map(s => `
+    <div class="metric-card navy-accent">
+      <div class="metric-label">${s.label}</div>
+      <div class="metric-val" style="font-size:20px">${s.val}<span class="metric-unit">${s.unit}</span></div>
+    </div>`).join('');
+}
+
+/* ════════════════════════════════════════
+   INIT
+════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', () => {
+  /* Set today's date as default */
+  document.getElementById('inp-date').value = today();
+
+  /* Topbar date */
+  const now = new Date();
+  document.getElementById('topbar-date').textContent =
+    now.toLocaleDateString('en-IN', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
+
+  /* Auto-refresh topbar date every minute */
+  setInterval(() => {
+    const n = new Date();
+    document.getElementById('topbar-date').textContent =
+      n.toLocaleDateString('en-IN', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
+  }, 60000);
+
+  /* Render initial dashboard */
+  renderDashboard();
+  renderTodayEntries();
+});
+</script>
+</body>
+</html>
